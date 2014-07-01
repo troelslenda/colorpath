@@ -1,0 +1,69 @@
+<?php
+
+
+function colorpath_preprocess_html(&$variables) {
+  // Avalible themes.
+  $themes = array(
+    'theme-red',
+    'theme-purple',
+    'theme-blue',
+    'theme-yellow',
+    'theme-green',
+    'theme-pink'
+  );
+  $variables['classes_array'][] = $themes[rand(0, sizeof($themes)-1)];
+}
+
+/**
+* Implements hook_form_BASE_FORM_ID_alter() for node_form().
+ *
+ * @see path_form_element_validate()
+*/
+function colorpath_form_node_form_alter(&$form, $form_state) {
+
+
+  /*if (!empty($form['#node']->nid)) {
+    $conditions = array('source' => 'node/' . $form['#node']->nid);
+    $langcode = entity_language('node', $form['#node']);
+    if ($langcode != LANGUAGE_NONE) {
+      $conditions['language'] = $langcode;
+    }
+    $path = path_load($conditions);
+    if ($path === FALSE) {
+      $path = array();
+    }
+  }*/
+
+  $form['colorpath'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Color settings'),
+    '#collapsible' => TRUE,
+
+    '#group' => 'additional_settings',
+    '#attributes' => array(
+      'class' => array('colorpath-form'),
+    ),
+    '#access' => user_access('create url aliases') || user_access('administer url aliases'),
+    '#weight' => 30,
+    '#tree' => TRUE,
+    '#element_validate' => array('path_form_element_validate'),
+  );
+  $form['colorpath']['color'] = array(
+    '#type' => 'select',
+    '#title' => t('Theme color'),
+    '#options' => array(
+      'theme-red' => t('Red'),
+      'theme-purple' => t('Purple'),
+      'theme-blue' => t('Blue'),
+      'theme-yellow' => t('Yellow'),
+      'theme-green' => t('Green'),
+      'theme-pink' => t('Pink'),
+    ),
+    //'#default_value' => $path['alias'],
+    '#maxlength' => 255,
+    '#description' => t('Choose which color theme this piece of content should have.'),
+  );
+  $form['colorpath']['pid'] = array('#type' => 'value', '#value' => $path['pid']);
+  $form['colorpath']['source'] = array('#type' => 'value', '#value' => $path['source']);
+  $form['colorpath']['language'] = array('#type' => 'value', '#value' => $path['language']);
+}
