@@ -1,43 +1,64 @@
 <?php
 
 
+
+/**
+ * Implements theme_preprocess_html().
+ */
 function colorpath_preprocess_html(&$variables) {
-  // Avalible themes.
-  $themes = array(
-    'theme-red',
-    'theme-purple',
-    'theme-blue',
-    'theme-yellow',
-    'theme-green',
-    'theme-pink'
-  );
-  $variables['classes_array'][] = $themes[rand(0, sizeof($themes)-1)];
+
+  // Find the color.
+  if ($color = _colorpath_get_color(current_path())) {
+    $theme = $color['color'];
+  }
+  else {
+    // If no color exists for the path, choose a random one.
+    $colors = _colorpath_colors_as_options();
+    $themes = array_keys($colors);
+    array_shift($themes);
+    $theme = $themes[rand(0, sizeof($themes) - 1)];
+  }
+  $variables['classes_array'][] = $theme;
+
 }
 
 /**
-* Implements hook_form_BASE_FORM_ID_alter() for node_form().
+ * Implements hook_form_alter().
+ */
+function colorpath_form_path_admin_form_alter(&$form, &$form_state) {
+  $color = _colorpath_get_color($form['source']['#default_value']);
+  $form['color'] = array(
+    '#type' => 'select',
+    '#title' => t('Theme color'),
+    '#options' => _colorpath_colors_as_options(),
+    '#default_value' => $color ? $color['color'] : 0,
+    '#maxlength' => 255,
+    '#description' => t('Choose which color theme this piece of content should have.'),
+  );
+  // If a color is already set, then remove the Not set option.
+  if ($color) {
+    array_shift($form['color']['#options']);
+  }
+  $form['#submit'][] = 'colorpath_set_color_submit';
+}
+
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for node_form().
  *
  * @see path_form_element_validate()
-*/
+ */
 function colorpath_form_node_form_alter(&$form, $form_state) {
 
-
-  /*if (!empty($form['#node']->nid)) {
-    $conditions = array('source' => 'node/' . $form['#node']->nid);
-    $langcode = entity_language('node', $form['#node']);
-    if ($langcode != LANGUAGE_NONE) {
-      $conditions['language'] = $langcode;
-    }
-    $path = path_load($conditions);
-    if ($path === FALSE) {
-      $path = array();
-    }
-  }*/
+  $color = _colorpath_get_color('node/' . $form['#node']->nid);
 
   $form['colorpath'] = array(
     '#type' => 'fieldset',
     '#title' => t('Color settings'),
     '#collapsible' => TRUE,
+    '#attached' => array(
+      'js' => array(drupal_get_path('module', 'colorpath') . '/colorpath.js'),
+    ),
 
     '#group' => 'additional_settings',
     '#attributes' => array(
@@ -51,19 +72,80 @@ function colorpath_form_node_form_alter(&$form, $form_state) {
   $form['colorpath']['color'] = array(
     '#type' => 'select',
     '#title' => t('Theme color'),
-    '#options' => array(
-      'theme-red' => t('Red'),
-      'theme-purple' => t('Purple'),
-      'theme-blue' => t('Blue'),
-      'theme-yellow' => t('Yellow'),
-      'theme-green' => t('Green'),
-      'theme-pink' => t('Pink'),
-    ),
-    //'#default_value' => $path['alias'],
+    '#options' => _colorpath_colors_as_options(),
+    '#default_value' => $color ? $color['color'] : 0,
     '#maxlength' => 255,
     '#description' => t('Choose which color theme this piece of content should have.'),
   );
-  $form['colorpath']['pid'] = array('#type' => 'value', '#value' => $path['pid']);
-  $form['colorpath']['source'] = array('#type' => 'value', '#value' => $path['source']);
-  $form['colorpath']['language'] = array('#type' => 'value', '#value' => $path['language']);
+}
+
+
+/**
+ * Submithandler.
+ */
+function colorpath_set_color_submit(&$form, &$form_state) {
+  if ($form_state['values']['color']) {
+
+    _colorpath_set_color($form_state['values']['source'], $form_state['values']['color']);
+  }
+}
+
+/**
+ * Sets the color for each path.
+ */
+function _colorpath_set_color($source, $color) {
+  // Check for path.
+  $result = _colorpath_get_color($source);
+
+  $vars = array(
+    'source' => $source,
+    'color' => $color
+  );
+
+  // Update record!
+  if ($result) {
+    $vars['pid'] = $result['pid'];
+    drupal_write_record('colorpath', $vars, array('pid'));
+  }
+  else {
+    // Create new!
+    drupal_write_record('colorpath', $vars);
+  }
+}
+
+/**
+ * Check for entry in the table.
+ *
+ * @param string $source
+ *   The source to check.
+ *
+ * @return array
+ *   The db record.
+ */
+function _colorpath_get_color($source) {
+  // Check for path.
+  $result = db_select('colorpath', 'c')
+    ->fields('c')
+    ->condition('source', $source, '=')
+    ->execute()
+    ->fetchAssoc();
+  return $result;
+}
+
+/**
+ * Returns the colors as options for forms.
+ *
+ * @return array
+ *   The colors as a array.
+ */
+function _colorpath_colors_as_options() {
+  return array(
+    0 => t('Not set'),
+    'theme-red' => t('Red'),
+    'theme-purple' => t('Purple'),
+    'theme-blue' => t('Blue'),
+    'theme-yellow' => t('Yellow'),
+    'theme-green' => t('Green'),
+    'theme-pink' => t('Pink'),
+  );
 }

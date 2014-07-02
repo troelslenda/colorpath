@@ -12,7 +12,6 @@ function colorpath_schema() {
       'pid' => array(
         'description' => 'auto increment',
         'type' => 'serial',
-        //'size' => 'small',
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
