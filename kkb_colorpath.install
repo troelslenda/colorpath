@@ -3,10 +3,10 @@
 /**
  * Implements hook_schema().
  */
-function colorpath_schema() {
+function kkb_colorpath_schema() {
   $schema = array();
 
-  $schema['colorpath'] = array(
+  $schema['kkb_colorpath'] = array(
     'description' => 'Path to color mapping.',
     'fields' => array(
       'pid' => array(

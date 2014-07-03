@@ -5,15 +5,15 @@
 /**
  * Implements theme_preprocess_html().
  */
-function colorpath_preprocess_html(&$variables) {
+function kkb_colorpath_preprocess_html(&$variables) {
 
   // Find the color.
-  if ($color = _colorpath_get_color(current_path())) {
+  if ($color = _kkb_colorpath_get_color(current_path())) {
     $theme = $color['color'];
   }
   else {
     // If no color exists for the path, choose a random one.
-    $colors = _colorpath_colors_as_options();
+    $colors = _kkb_colorpath_colors_as_options();
     $themes = array_keys($colors);
     array_shift($themes);
     $theme = $themes[rand(0, sizeof($themes) - 1)];
@@ -25,12 +25,12 @@ function colorpath_preprocess_html(&$variables) {
 /**
  * Implements hook_form_alter().
  */
-function colorpath_form_path_admin_form_alter(&$form, &$form_state) {
-  $color = _colorpath_get_color($form['source']['#default_value']);
+function kkb_colorpath_form_path_admin_form_alter(&$form, &$form_state) {
+  $color = _kkb_colorpath_get_color($form['source']['#default_value']);
   $form['color'] = array(
     '#type' => 'select',
     '#title' => t('Theme color'),
-    '#options' => _colorpath_colors_as_options(),
+    '#options' => _kkb_colorpath_colors_as_options(),
     '#default_value' => $color ? $color['color'] : 0,
     '#maxlength' => 255,
     '#description' => t('Choose which color theme this piece of content should have.'),
@@ -39,7 +39,7 @@ function colorpath_form_path_admin_form_alter(&$form, &$form_state) {
   if ($color) {
     array_shift($form['color']['#options']);
   }
-  $form['#submit'][] = 'colorpath_set_color_submit';
+  $form['#submit'][] = 'kkb_colorpath_set_color_submit';
 }
 
 
@@ -48,17 +48,17 @@ function colorpath_form_path_admin_form_alter(&$form, &$form_state) {
  *
  * @see path_form_element_validate()
  */
-function colorpath_form_node_form_alter(&$form, $form_state) {
+function kkb_colorpath_form_node_form_alter(&$form, $form_state) {
 
   $source = 'node/' . $form['#node']->nid;
-  $color = _colorpath_get_color($source);
+  $color = _kkb_colorpath_get_color($source);
 
   $form['colorpath'] = array(
     '#type' => 'fieldset',
     '#title' => t('Color settings'),
     '#collapsible' => TRUE,
     '#attached' => array(
-      'js' => array(drupal_get_path('module', 'colorpath') . '/colorpath.js'),
+      'js' => array(drupal_get_path('module', 'kkb_colorpath') . '/kkb_colorpath.js'),
     ),
 
     '#group' => 'additional_settings',
@@ -72,40 +72,40 @@ function colorpath_form_node_form_alter(&$form, $form_state) {
   $form['colorpath']['color'] = array(
     '#type' => 'select',
     '#title' => t('Theme color'),
-    '#options' => _colorpath_colors_as_options(),
+    '#options' => _kkb_colorpath_colors_as_options(),
     '#default_value' => $color ? $color['color'] : 0,
     '#maxlength' => 255,
     '#description' => t('Choose which color theme this piece of content should have.'),
   );
   $form['colorpath']['source'] = array('#type' => 'value', '#value' => $source);
-  $form['#submit'][] = 'colorpath_node_submit';
+  $form['#submit'][] = 'kkb_colorpath_node_submit';
 }
 
 
 /**
  * Submit handler for node save.
  */
-function colorpath_node_submit(&$form, &$form_state) {
+function kkb_colorpath_node_submit(&$form, &$form_state) {
   if ($form_state['values']['colorpath']['color']) {
-    _colorpath_set_color($form_state['values']['colorpath']['source'], $form_state['values']['colorpath']['color']);
+    _kkb_colorpath_set_color($form_state['values']['colorpath']['source'], $form_state['values']['colorpath']['color']);
   }
 }
 
 /**
  * Submit handler for colorpath add/edit.
  */
-function colorpath_set_color_submit(&$form, &$form_state) {
+function kkb_colorpath_set_color_submit(&$form, &$form_state) {
   if ($form_state['values']['color']) {
-    _colorpath_set_color($form_state['values']['source'], $form_state['values']['color']);
+    _kkb_colorpath_set_color($form_state['values']['source'], $form_state['values']['color']);
   }
 }
 
 /**
  * Sets the color for each path.
  */
-function _colorpath_set_color($source, $color) {
+function _kkb_colorpath_set_color($source, $color) {
   // Check for path.
-  $result = _colorpath_get_color($source);
+  $result = _kkb_colorpath_get_color($source);
 
   $vars = array(
     'source' => $source,
@@ -115,11 +115,11 @@ function _colorpath_set_color($source, $color) {
   // Update record!
   if ($result) {
     $vars['pid'] = $result['pid'];
-    drupal_write_record('colorpath', $vars, array('pid'));
+    drupal_write_record('kkb_colorpath', $vars, array('pid'));
   }
   else {
     // Create new!
-    drupal_write_record('colorpath', $vars);
+    drupal_write_record('kkb_colorpath', $vars);
   }
 }
 
@@ -132,9 +132,9 @@ function _colorpath_set_color($source, $color) {
  * @return array
  *   The db record.
  */
-function _colorpath_get_color($source) {
+function _kkb_colorpath_get_color($source) {
   // Check for path.
-  $result = db_select('colorpath', 'c')
+  $result = db_select('kkb_colorpath', 'c')
     ->fields('c')
     ->condition('source', $source, '=')
     ->execute()
@@ -148,7 +148,7 @@ function _colorpath_get_color($source) {
  * @return array
  *   The colors as a array.
  */
-function _colorpath_colors_as_options() {
+function _kkb_colorpath_colors_as_options() {
   return array(
     0 => t('Not set'),
     'theme-red' => t('Red'),
@@ -161,7 +161,7 @@ function _colorpath_colors_as_options() {
 }
 
 
-function colorpath_init() {
+function kkb_colorpath_init() {
   return;
 
   $role = user_role_load_by_name('staff');
